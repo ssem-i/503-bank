@@ -1,0 +1,39 @@
+# 운영 replant MSA 앱 서버(사설 IP 10.0.7.76)용. payment가 K3s 파드라 Docker 네트워크 이름으로는 못 찾으므로
+# 앱 서버 사설 IP의 3001에만 포트를 연다(인터넷 쪽은 열리지 않음, 보안 그룹도 3001을 막음).
+#   payment → bank : BANK_BASE_URL=http://10.0.7.76:3001
+# 실행: docker compose -f docker-compose.prod.yml pull && docker compose -f docker-compose.prod.yml up -d
+#   이미지는 CD(.github/workflows/cd.yml)가 GHCR에 올린다. 특정 커밋으로: IMAGE_TAG=a1b2c3d docker compose ... up -d
+#   서버에서 직접 빌드하려면 up -d --build (build: . 를 쓴다)
+#
+# 주의: bank-data 볼륨을 지우지 말 것. 지급 기록이 사라지면 GET이 404(= 처리한 적 없음)를 주게 되어
+#       payment의 결과 불명 복구가 이미 지급한 건을 다시 지급(이중 지급)할 수 있다. down -v 금지.
+# 프로젝트 이름을 고정한다. 볼륨 실제 이름이 503-bank_bank-data로 정해져, 디렉터리를 옮기거나 다른 경로에서 실행해도 같은 볼륨을 쓴다
+name: 503-bank
+
+services:
+  bank:
+    build: .
+    image: ghcr.io/ssem-i/503-bank:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DB_PATH: /data/bank.db
+      PORT: "3001"
+      # mem_limit 128m 안에서 V8 힙이 컨테이너 한도를 넘지 않게 묶는다
+      NODE_OPTIONS: --max-old-space-size=80
+    mem_limit: 128m
+    # 앱 서버 사설 IP에만 바인딩한다. 서버를 옮기면 이 IP와 payment BANK_BASE_URL을 함께 바꾼다
+    ports:
+      - "10.0.7.76:3001:3001"
+    volumes:
+      - bank-data:/data
+    # 이미지에 curl이 없어서 Node로 /health를 부른다 (Dockerfile HEALTHCHECK와 같음)
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/health').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"]
+      interval: 30s
+      timeout: 3s
+      start_period: 10s
+      retries: 3
+
+volumes:
+  bank-data:
