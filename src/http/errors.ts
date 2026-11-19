@@ -3,8 +3,13 @@ import { error } from './response.js';
 
 export const ErrorCode = {
   BAD_REQUEST_DATA: [400, '잘못된 요청입니다.'],
+  INVALID_IDEMPOTENCY_KEY: [400, 'Idempotency-Key 헤더가 없거나 형식이 올바르지 않습니다.'],
   UNAUTHORIZED: [401, '인증 키가 올바르지 않습니다.'],
   RESOURCE_NOT_FOUND: [404, '요청한 리소스를 찾을 수 없습니다.'],
+  IDEMPOTENCY_KEY_REUSED: [409, '같은 Idempotency-Key로 다른 내용의 요청이 들어왔습니다.'],
+  // 지급이 안 된 것이 확실한 실패. 같은 키로 다시 요청하면 같은 실패를 준다
+  INVALID_ACCOUNT: [422, '존재하지 않는 계좌입니다.'],
+  ACCOUNT_HOLDER_MISMATCH: [422, '예금주가 일치하지 않습니다.'],
   INTERNAL_ERROR: [500, '서버 내부 오류가 발생했습니다.'],
 } as const satisfies Record<string, readonly [number, string]>;
 
