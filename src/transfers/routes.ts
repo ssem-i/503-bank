@@ -4,7 +4,7 @@ import { BusinessError, ErrorCode } from '../http/errors.js';
 import { error, ok } from '../http/response.js';
 import type { Clock } from '../time.js';
 import { IDEMPOTENCY_KEY_PATTERN, transferRequestSchema, type TransferRequest } from './schema.js';
-import { transfer, type Decide } from './service.js';
+import { getTransfer, transfer, type Decide } from './service.js';
 
 function parseTransferBody(body: unknown): TransferRequest {
   const result = transferRequestSchema.safeParse(body ?? {});
@@ -48,6 +48,11 @@ export function transferRoutes({ db, clock, decide }: TransferRouteDeps): Router
     const code = view.failureCode!;
     const [status, message] = ErrorCode[code];
     res.status(status).json(error(status, code, message, view));
+  });
+
+  router.get('/:idempotencyKey', (req, res) => {
+    const key = idempotencyKeyOf(req.params.idempotencyKey);
+    res.json(ok('지급 조회에 성공했습니다.', getTransfer(db, key)));
   });
 
   return router;

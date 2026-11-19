@@ -63,6 +63,13 @@ function findRow(db: Db, idempotencyKey: string): TransferRow | undefined {
   return db.prepare(`SELECT * FROM transfers WHERE idempotency_key = ?`).get(idempotencyKey) as TransferRow | undefined;
 }
 
+/** 지급 조회. 이 키로 기록된 요청이 한 번도 없을 때만 404 */
+export function getTransfer(db: Db, idempotencyKey: string): TransferView {
+  const row = findRow(db, idempotencyKey);
+  if (!row) throw new BusinessError('TRANSFER_NOT_FOUND');
+  return toView(row);
+}
+
 /**
  * 지급. 같은 키가 이미 있으면 새로 처리하지 않고 처음 결과(성공이든 실패든)를 돌려준다.
  * 판정과 기록이 한 트랜잭션이고, 커밋된 뒤에야 반환하므로 응답보다 기록이 먼저다.
