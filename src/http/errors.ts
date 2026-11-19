@@ -13,6 +13,7 @@ export const ErrorCode = {
   INVALID_ACCOUNT: [422, '존재하지 않는 계좌입니다.'],
   ACCOUNT_HOLDER_MISMATCH: [422, '예금주가 일치하지 않습니다.'],
   INTERNAL_ERROR: [500, '서버 내부 오류가 발생했습니다.'],
+  SERVICE_UNAVAILABLE: [503, '은행 시스템이 응답하지 않습니다. 잠시 후 다시 시도해 주세요.'],
 } as const satisfies Record<string, readonly [number, string]>;
 
 export type ErrorCodeName = keyof typeof ErrorCode;

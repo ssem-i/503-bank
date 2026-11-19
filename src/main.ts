@@ -8,7 +8,7 @@ const db = openDb(config.dbPath);
 const app = createApp({ db, clock: systemClock, config });
 
 const server = app.listen(config.port, () => {
-  console.log(`bank listening on :${config.port}`);
+  console.log(`bank listening on :${config.port} (faultMode=${config.faultMode}, faultDelayMs=${config.faultDelayMs})`);
 });
 
 function shutdown() {
